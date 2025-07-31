@@ -159,4 +159,5 @@ public class UserDetailsImpl implements UserDetails {
 		return new UserDetailsImpl(userId, DeptCode, DistId, userDescription, DeptId, RoleId, responseCode,
 				responseDesc);
 	}
+
 }

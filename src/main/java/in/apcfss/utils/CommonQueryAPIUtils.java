@@ -21,7 +21,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -48,11 +47,6 @@ public class CommonQueryAPIUtils {
 	private static final String FAILMSG = "Failed Due To: ";
 	private static final String ATVALIDATION = " at Validation";
 
-	
-	public static final String PATH = "path";
-	public static final String ERROR = "error";
-	
-	
 	public static Map<String, Object> apiService(String apiServiceName, List<Map<String, Object>> repomethod) {
 		Map<String, Object> finalData = new LinkedHashMap<>();
 		var noDataFound = "No data found";
@@ -80,39 +74,6 @@ public class CommonQueryAPIUtils {
 			finalData.put(dataCount, 0);
 		}
 		return finalData;
-	}
-	
-	public static List<Map<String, Object>> apiServiceList(String apiServiceName, List<Map<String, Object>> repomethod) {
-	    Map<String, Object> finalData = new LinkedHashMap<>();
-	    var noDataFound = "No data found";
-	    var dataCount = "data_count";
-
-	    try {
-	        if (!repomethod.isEmpty()) {
-	            finalData.put(STATUS, true);
-	            finalData.put(SCODE, SUCCESS_CODE);
-	            finalData.put(SDESC, "data found");
-	            finalData.put(apiServiceName, repomethod);
-	            finalData.put(dataCount, repomethod.size());
-	        } else {
-	            finalData.put(STATUS, false);
-	            finalData.put(SCODE, OTHER_CODE);
-	            finalData.put(SDESC, noDataFound);
-	            finalData.put(apiServiceName, noDataFound);
-	            finalData.put(dataCount, 0);
-	        }
-	    } catch (Exception e) {
-	        catchResponse(e);
-	        finalData.put(STATUS, false);
-	        finalData.put(SCODE, FAILURE_CODE);
-	        finalData.put(SDESC, ISI);
-	        finalData.put(apiServiceName, noDataFound);
-	        finalData.put(dataCount, 0);
-	    }
-
-	    List<Map<String, Object>> responseList = new ArrayList<>();
-	    responseList.add(finalData);
-	    return responseList;
 	}
 
 	public static Map<String, Object> apiServiceMulti(List<String> apiServiceNameList,
@@ -240,7 +201,8 @@ public class CommonQueryAPIUtils {
 			finalData.put(SDESC, FAILMSG + ISI);
 		} else {
 			finalData.put(SCODE, OTHER_CODE);
-			finalData.put(SDESC, FAILMSG + errorMessage);
+		//	finalData.put(SDESC, FAILMSG + errorMessage);
+			finalData.put(SDESC,  errorMessage);
 		}
 
 		return ResponseEntity.ok().body(finalData);
@@ -254,18 +216,6 @@ public class CommonQueryAPIUtils {
 		finalData.put(SDESC, "Unauthorized request");
 
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(finalData);
-	}
-	public static String defaultResponse(String code, String message) {
-		Map<String, Object> finalData = new LinkedHashMap<>();
-		if (SUCCESS_CODE.equals(code)) {
-			finalData.put(STATUS, true);
-		} else {
-			finalData.put(STATUS, false);
-		}
-		finalData.put(SCODE, code);
-		finalData.put(SDESC, message);
-
-		return finalData.toString();
 	}
 
 	public static ResponseEntity<Map<String, Object>> manualResponse(String code, String message) {
@@ -508,80 +458,39 @@ public class CommonQueryAPIUtils {
 		return sb.toString();
 	}
 
- 
+	public static Map<String, Object> uploadFileToAWSS3Bucket(byte[] fileByteArray, String fileNameWithExtension,
+			String apiUrl) {
 
+		Map<String, Object> responseMap = new LinkedHashMap<>();
 
-	/**
-	 * Uploads a file to an S3-compatible endpoint via multipart/form-data.
-	 *
-	 * @param fileByteArray         the file content as byte array
-	 * @param fileNameWithExtension name of the file (e.g., "document.pdf")
-	 * @param apiUrl                endpoint URL to upload the file
-	 * @return Map with keys: "status" (boolean), "path" (String if successful), and "error" (String if failed)
-	 */
-	public static Map<String, Object> uploadFileToAWSS3Bucket(byte[] fileByteArray, String fileNameWithExtension, String apiUrl) {
-	    Map<String, Object> responseMap = new LinkedHashMap<>();
+		ByteArrayResource fileResource = new ByteArrayResource(fileByteArray) {
+			@Override
+			public String getFilename() {
+				return fileNameWithExtension;
+			}
+		};
 
-	    // Validate inputs
-	    if (fileByteArray == null || fileByteArray.length == 0) {
-	        responseMap.put(STATUS, false);
-	        responseMap.put(ERROR, "File content is empty.");
-	        return responseMap;
-	    }
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-	    if (fileNameWithExtension == null || fileNameWithExtension.isEmpty()) {
-	        responseMap.put(STATUS, false);
-	        responseMap.put(ERROR, "File name is missing.");
-	        return responseMap;
-	    }
+		MultiValueMap<String, Object> payload = new LinkedMultiValueMap<>();
+		payload.add("file", fileResource);
 
-	    if (apiUrl == null || apiUrl.isEmpty()) {
-	        responseMap.put(STATUS, false);
-	        responseMap.put(ERROR, "API URL is missing.");
-	        return responseMap;
-	    }
+		HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
 
-	    try {
-	        // Set timeouts
-	        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-	        factory.setConnectTimeout(5000); // 5 seconds
-	        factory.setReadTimeout(10000);   // 10 seconds
-	        RestTemplate restTemplate = new RestTemplate(factory);
+		var restTemplate = new RestTemplate();
+		ResponseEntity<String> responseEntity = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
 
-	        // Wrap byte array in a ByteArrayResource with a custom filename
-	        ByteArrayResource fileResource = new ByteArrayResource(fileByteArray) {
-	            @Override
-	            public String getFilename() {
-	                return fileNameWithExtension;
-	            }
-	        };
+		if (responseEntity.getStatusCode().is2xxSuccessful()) {
+//			System.out.println("File uploaded successfully! Path is " + responseEntity.getBody());
+			responseMap.put(STATUS, true);
+			responseMap.put("path", responseEntity.getBody());
+		} else {
+//			System.out.println("Failed to upload File. Response: " + responseEntity.getBody());
+			responseMap.put(STATUS, false);
+		}
 
-	        // Prepare headers and payload
-	        HttpHeaders headers = new HttpHeaders();
-	        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-	        MultiValueMap<String, Object> payload = new LinkedMultiValueMap<>();
-	        payload.add("file", fileResource);
-
-	        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
-
-	        // Send the request
-	        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
-
-	        if (response.getStatusCode().is2xxSuccessful()) {
-	            responseMap.put(STATUS, true);
-	            responseMap.put(PATH, response.getBody());
-	        } else {
-	            responseMap.put(STATUS, false);
-	            responseMap.put(ERROR, "Upload failed with status: " + response.getStatusCode());
-	        }
-
-	    } catch (Exception e) {
-	        responseMap.put(STATUS, false);
-	        responseMap.put(ERROR, "Exception occurred: " + e.getMessage());
-	    }
-
-	    return responseMap;
+		return responseMap;
 	}
 
 	public static BufferedImage createImageWithText(String text) {

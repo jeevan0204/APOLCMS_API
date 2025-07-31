@@ -3,6 +3,7 @@ package in.apcfss.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-
+import in.apcfss.entities.UserDetailsImpl;
 import in.apcfss.requestbodies.LoginRequest;
 import in.apcfss.requestbodies.RefreshTokenPayload;
 import in.apcfss.services.AuthGenService;
@@ -36,6 +37,7 @@ public class AuthGenController {
 	
 	@PostMapping("/auth/authenticate")
 	public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+		
 	    System.err.println(loginRequest);
 		return authService.authenticateUser(loginRequest);
 	}

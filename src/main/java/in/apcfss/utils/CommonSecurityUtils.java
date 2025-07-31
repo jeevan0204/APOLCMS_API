@@ -46,12 +46,16 @@ public class CommonSecurityUtils {
 	}
 
 	public static Boolean verifyCaptcha(String captchaId, String inputCaptcha) {
+	    String storeCaptcha = globalCaptchaStore.get(captchaId); // no default!
+	    
+	    if (storeCaptcha != null && inputCaptcha.equals(storeCaptcha)) {
+	        globalCaptchaStore.remove(captchaId); // remove only if it's correct
+	        return true;
+	    }
 
-		String storeCaptcha = globalCaptchaStore.getOrDefault(captchaId, "");
-		globalCaptchaStore.remove(captchaId);
-		return inputCaptcha.equals(storeCaptcha);
-
+	    return false;
 	}
+
 
 	private static Map<String, Map<String, LocalDateTime>> globalOtpStore = new LinkedHashMap<>();
 
