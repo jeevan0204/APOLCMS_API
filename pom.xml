@@ -112,6 +112,11 @@
 			<artifactId>json</artifactId>
 			<version>20220924</version>
 		</dependency>
+		<dependency>
+			<groupId>cn.apiclub.tool</groupId>
+			<artifactId>simplecaptcha</artifactId>
+			<version>1.2.2</version>
+		</dependency>
 		<!-- ************************ DEPENDANCIES FOR AWS ******************* -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
