@@ -10,13 +10,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import in.apcfss.requestbodies.HCCaseStatusAbstractReqBody;
-import in.apcfss.services.AcknowledgementsReportService;
-import in.apcfss.services.DistrictWiseAssigmentCasesAbstractService;
-import in.apcfss.services.DistrictWiseFinalOrdersImplReportService;
-import in.apcfss.services.DistrictWiseInterimOrderImplReportService;
-import in.apcfss.services.ScanDocsCountReportService;
+ 
+import in.apcfss.services.DistrictWiseAssigmentCasesAbstractService; 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @CrossOrigin(origins = "http://localhost:3000")

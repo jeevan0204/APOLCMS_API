@@ -1,12 +1,5 @@
 package in.apcfss.services;
-
-import java.awt.Color;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
+ 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,102 +8,129 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.multipart.MultipartFile;
-
-import in.apcfss.common.CommonModels;
-import in.apcfss.entities.UserDetailsImpl;
-import in.apcfss.repositories.AssignedCasesToSectionRepo;
-import in.apcfss.repositories.DistrictWiseFinalOrdersImplementationRegRepo;
-import in.apcfss.requestbodies.HCCaseStatusAbstractReqBody;
-import jakarta.servlet.http.HttpServletRequest;
-
+import org.springframework.stereotype.Service; 
+import in.apcfss.entities.UserDetailsImpl; 
 
 @Service
-public abstract class DistrictWiseAssigmentCasesAbstractServiceImpl implements DistrictWiseAssigmentCasesAbstractService {
+public class DistrictWiseAssigmentCasesAbstractServiceImpl implements DistrictWiseAssigmentCasesAbstractService {
 
 	@Autowired
 	JdbcTemplate jdbcTemplate;
 
 	@Override
-	public List<Map<String, Object>> getDistrictWiseAssigmentCasesList(Authentication authentication, String section_code){
-	
-	UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-		String roleId = userPrincipal.getRoleId() != null ? userPrincipal.getRoleId().toString() : "";
-		String deptCode = userPrincipal.getDeptCode() != null ? userPrincipal.getDeptCode().toString() : "";
-		String userId = userPrincipal.getUserId() != null ? userPrincipal.getUserId().toString() : "";
-		String  sql="" ;
+	public List<Map<String, Object>> getDistrictWiseAssigmentCasesList(Authentication authentication, String sectionCode) {
+	    UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
-		try {
-			if(roleId.equals("9") ) {
+	    String roleId = String.valueOf(userPrincipal.getRoleId());
+	    String deptCode = String.valueOf(userPrincipal.getDeptCode());
 
-				if(section_code!=null && section_code.equals("N"))
-				{
-					sql=" select  case when district_name IS NULL then '"+deptCode+" / HOD' else district_name end AS district_name,coalesce(dist_id,'0') as dist_id , total,uploaded,(total-uploaded) as not_uploaded  from "
-							+ " (select b.district_name,c.dist_id,"
-							+ " sum(case when c.ecourts_case_status in ('Pending','Closed','Private')  then 1 else 0 end) as uploaded,"
-							+ " count( a.ack_no) as total from ecourts_gpo_ack_dtls a inner join ecourts_gpo_ack_depts c on (a.ack_no=c.ack_no) left join district_mst b on (c.dist_id=b.district_id)"
-							+ " left join ecourts_olcms_case_details ecod on(a.ack_no=ecod.cino )"
-							+ " where dept_code='"+deptCode+"' group by c.dist_id,district_name )x order by district_name ";
+	    List<Map<String, Object>> result = new ArrayList<>();
 
-				}
-				else {
-                     System.out.println("---");
-					sql=" select  case when district_name IS NULL then '"+deptCode+" / HOD' else district_name end AS district_name,coalesce(dist_id,'0') as dist_id , total,uploaded,(total-uploaded) as not_uploaded  from "
-							+ " (select b.district_name,dist_id,"
-							+ " sum(case when a.ecourts_case_status in ('Pending','Closed','Private') then 1 else 0 end) as uploaded,"
-							+ " count(*) as total from ecourts_case_data a left join district_mst b on (a.dist_id=b.district_id)"
-							+ " left join ecourts_olcms_case_details ecod on(a.cino=ecod.cino )"
-							+ " where dept_code='"+deptCode+"' group by dist_id,district_name )x order by district_name ";
-				}
+	    if (!"9".equals(roleId)) {
+	        return result; // Return empty list for non-HOD roles
+	    }
 
-			}
-			System.out.println("InterimOrderFinalOrderService SQL:" + sql);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return jdbcTemplate.queryForList(sql);
+	    String sql = "";
+	    Map<String, Object> params = new HashMap<>();
+
+	    try {
+	        if ("N".equalsIgnoreCase(sectionCode)) {
+	            sql = """
+	                    SELECT 
+	                        COALESCE(district_name, :deptCode || ' / HOD') AS district_name, COALESCE(dist_id, '0') AS dist_id, total, uploaded, (total - uploaded) AS not_uploaded  
+	                    FROM (
+	                        SELECT  b.district_name,  c.dist_id, COUNT(a.ack_no) AS total, SUM(CASE  WHEN c.ecourts_case_status IN ('Pending','Closed','Private') THEN 1  ELSE 0  END) AS uploaded
+	                        FROM ecourts_gpo_ack_dtls a
+	                        INNER JOIN ecourts_gpo_ack_depts c ON a.ack_no = c.ack_no
+	                        LEFT JOIN district_mst b ON c.dist_id = b.district_id
+	                        LEFT JOIN ecourts_olcms_case_details ecod ON a.ack_no = ecod.cino
+	                        WHERE c.dept_code = :deptCode
+	                        GROUP BY c.dist_id, b.district_name
+	                    ) x
+	                    ORDER BY district_name
+	                """;
+	        } else {
+	            sql = """
+	                    SELECT 
+	                        COALESCE(district_name, :deptCode || ' / HOD') AS district_name,
+	                        COALESCE(dist_id, '0') AS dist_id,total, uploaded, (total - uploaded) AS not_uploaded
+	                    FROM (
+	                        SELECT  b.district_name, a.dist_id, COUNT(*) AS total, SUM(CASE   WHEN a.ecourts_case_status IN ('Pending','Closed','Private') THEN 1  ELSE 0  END) AS uploaded
+	                        FROM ecourts_case_data a
+	                        LEFT JOIN district_mst b ON a.dist_id = b.district_id
+	                        LEFT JOIN ecourts_olcms_case_details ecod ON a.cino = ecod.cino
+	                        WHERE a.dept_code = :deptCode
+	                        GROUP BY a.dist_id, b.district_name
+	                    ) x
+	                    ORDER BY district_name
+	                """;
+	        }
+
+	        params.put("deptCode", deptCode);
+	        result = jdbcTemplate.queryForList(sql, params);
+
+	    } catch (Exception e) {
+	        e.printStackTrace(); // Or use a logger
+	    }
+
+	    return result;
 	}
 	
 	@Override
-	public List<Map<String, Object>> getDistrictWiseAssigmentCasesDetails(Authentication authentication, String section_code, String actionType, String email, String deptName, String uploadValue, String dist_id){
-	
-	UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-		String roleId = userPrincipal.getRoleId() != null ? userPrincipal.getRoleId().toString() : "";
-		String deptCode = userPrincipal.getDeptCode() != null ? userPrincipal.getDeptCode().toString() : "";
-		String userId = userPrincipal.getUserId() != null ? userPrincipal.getUserId().toString() : "";
-		int distCode = userPrincipal.getDistId() != null ? userPrincipal.getDistId() : 0;
-		String  sql="",sqlCondition="" ;
+	public List<Map<String, Object>> getDistrictWiseAssigmentCasesDetails(
+	        Authentication authentication, 
+	        String sectionCode, 
+	        String actionType, 
+	        String email, 
+	        String deptName, 
+	        String uploadValue, 
+	        String distId) {
 
-		try {
-			if (uploadValue.equals("U")) {
-				
-				sqlCondition = " and a.ecourts_case_status in ('Pending','Closed','Private')";
-			
-			} else if (uploadValue.equals("NU")) {
-			
-				sqlCondition = " and a.ecourts_case_status is null ";
-			} 
-			
-			if(section_code!=null && section_code.equals("N"))
-			{
-				sql = "select  a.ack_no,servicetpye,advocatename,advocateccno,casetype,maincaseno,petitioner_name,egd.inserted_time from ecourts_gpo_ack_depts  a "
-						+ " inner join ecourts_gpo_ack_dtls egd on (a.ack_no=egd.ack_no) left join ecourts_olcms_case_details ecod on(a.ack_no=ecod.cino )"
-						+ "where (dept_code='"+userId+"') and  (dist_id='"+distCode+"')  "+sqlCondition+" ";
+	    UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+	    String userId = String.valueOf(userPrincipal.getUserId());
+	    int distCode = userPrincipal.getDistId() != null ? userPrincipal.getDistId() : 0;
 
-			}
-			else {
-				sql = "select a.*, "
-						+ "coalesce(trim(a.scanned_document_path),'-') as scanned_document_path1 from ecourts_case_data a "
-						+ " inner join dept_new d on (a.dept_code=d.dept_code) left join ecourts_olcms_case_details ecod on(a.cino=ecod.cino ) where (d.dept_code='"+userId+"' OR reporting_dept_code='"+userId+"') and  (dist_id='"+distCode+"') "+sqlCondition+" ";
+	    String sql = "";
+	    String sqlCondition = "";
+	    Map<String, Object> params = new HashMap<>();
 
-			}
-			System.out.println("InterimOrderFinalOrderService SQL:" + sql);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return jdbcTemplate.queryForList(sql);
+	    try {
+	        if ("U".equalsIgnoreCase(uploadValue)) {
+	            sqlCondition = " AND a.ecourts_case_status IN ('Pending','Closed','Private')";
+	        } else if ("NU".equalsIgnoreCase(uploadValue)) {
+	            sqlCondition = " AND a.ecourts_case_status IS NULL";
+	        }
+
+	        params.put("userId", userId);
+	        params.put("distCode", distCode);
+
+	        if ("N".equalsIgnoreCase(sectionCode)) {
+	            sql = """
+	                SELECT  a.ack_no,  servicetpye,  advocatename,  advocateccno,  casetype,  maincaseno,   petitioner_name,  egd.inserted_time  FROM ecourts_gpo_ack_depts a
+	                INNER JOIN ecourts_gpo_ack_dtls egd ON a.ack_no = egd.ack_no
+	                LEFT JOIN ecourts_olcms_case_details ecod ON a.ack_no = ecod.cino
+	                WHERE a.dept_code = :userId 
+	                  AND a.dist_id = :distCode
+	                  """ + sqlCondition;
+	        } else {
+	            sql = """
+	                SELECT  a.*,  COALESCE(TRIM(a.scanned_document_path), '-') AS scanned_document_path1 
+	                FROM ecourts_case_data a
+	                INNER JOIN dept_new d ON a.dept_code = d.dept_code
+	                LEFT JOIN ecourts_olcms_case_details ecod ON a.cino = ecod.cino
+	                WHERE (d.dept_code = :userId OR reporting_dept_code = :userId)
+	                  AND a.dist_id = :distCode
+	                  """ + sqlCondition;
+	        }
+
+	        // Optional: Use a logger here
+	        System.out.println("Executing SQL: " + sql);
+
+	        
+	    } catch (Exception e) {
+	        e.printStackTrace(); // Replace with logger.error in real code
+	    }
+	    return jdbcTemplate.queryForList(sql, params);
 	}
 
 
