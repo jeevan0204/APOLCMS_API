@@ -26,6 +26,7 @@ public class JwtResponse1 implements Serializable {
 	private long jwtRefreshExpirationMs;
 	private String dept_code;
 	private Integer role;
+	private String userDescription;
 
 //	public JwtResponse(String responseCode, String responseDesc, String token, String userId, String ddoCode,
 //			Integer userGrCode, Integer deptCode, String emplFirstName, Long userDistCode,
@@ -47,7 +48,7 @@ public class JwtResponse1 implements Serializable {
 //	}
 
 	public JwtResponse1(String responseCode, String responseDesc, String token, String refreshtoken,
-			long jwtExpirationMs, long jwtRefreshExpirationMs, String dept_code, Integer role) {
+			long jwtExpirationMs, long jwtRefreshExpirationMs, String dept_code, Integer role,String userDescription) {
 		this.responseCode = responseCode;
 		this.responseDesc = responseDesc;
 		this.token = token;
@@ -56,8 +57,24 @@ public class JwtResponse1 implements Serializable {
 		this.jwtRefreshExpirationMs = jwtRefreshExpirationMs;
 		this.dept_code = dept_code;
 		this.role = role;
-		//checking
+		this.userDescription=userDescription;
+		//check
+		
 	}
+
+	
+
+	public String getUserDescription() {
+		return userDescription;
+	}
+
+
+
+	public void setUserDescription(String userDescription) {
+		this.userDescription = userDescription;
+	}
+
+
 
 	public String getToken() {
 		return token;
