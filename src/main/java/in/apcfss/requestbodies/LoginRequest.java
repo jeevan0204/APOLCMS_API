@@ -17,6 +17,6 @@ public class LoginRequest {
 	private String password;
 	private String captcha;
 	private String captchaId;
-	
+	///auth
 
 }
