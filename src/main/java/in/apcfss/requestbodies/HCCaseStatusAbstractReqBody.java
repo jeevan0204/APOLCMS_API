@@ -286,6 +286,8 @@ public class HCCaseStatusAbstractReqBody {
 	private int case_number;
 	private String mloId;
 	private String subjectDesc;
+	private String deptName;
+	private String flag;
 	
 	public String getSlno1() {
 		return slno1;
@@ -1198,6 +1200,22 @@ public class HCCaseStatusAbstractReqBody {
 	}
 	public void setSubjectDesc(String subjectDesc) {
 		this.subjectDesc = subjectDesc;
+	}
+
+
+	public String getDeptName() {
+		return deptName;
+	}
+	public void setDeptName(String deptName) {
+		this.deptName = deptName;
+	}
+
+
+	public String getFlag() {
+		return flag;
+	}
+	public void setFlag(String flag) {
+		this.flag = flag;
 	}
 
 

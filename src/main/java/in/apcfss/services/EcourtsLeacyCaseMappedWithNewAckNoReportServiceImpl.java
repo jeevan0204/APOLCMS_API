@@ -427,7 +427,7 @@ public class EcourtsLeacyCaseMappedWithNewAckNoReportServiceImpl implements Ecou
 			System.out.println("roleId---" + roleId);
 			if (districtId!= null && !districtId.toString().contentEquals("")
 					&& !districtId.toString().contentEquals("0")) {
-				sqlCondition += " and ad.distid='" +districtId.toString().trim() + "' ";
+				sqlCondition += " and a.distid='" +districtId.toString().trim() + "' ";
 			}
 
 			if (deptId!= null && !deptId.toString().contentEquals("")
@@ -436,11 +436,11 @@ public class EcourtsLeacyCaseMappedWithNewAckNoReportServiceImpl implements Ecou
 			}
 
 			if (fromDate!= null && !fromDate.toString().contentEquals("")) {
-				sqlCondition += " and ad.inserted_time::date >= to_date('" +fromDate+ "','dd-mm-yyyy') ";
+				sqlCondition += " and a.inserted_time::date >= to_date('" +fromDate+ "','dd-mm-yyyy') ";
 				
 			}
 			if (toDate!= null && !toDate.toString().contentEquals("")) {
-				sqlCondition += " and ad.inserted_time::date <= to_date('" +toDate
+				sqlCondition += " and a.inserted_time::date <= to_date('" +toDate
 						+ "','dd-mm-yyyy') ";
 				
 			}
@@ -454,13 +454,13 @@ public class EcourtsLeacyCaseMappedWithNewAckNoReportServiceImpl implements Ecou
 					&& !serviceType1.toString().contentEquals("")
 					&& !serviceType1.toString().contentEquals("0")) {
 				
-				sqlCondition += " and d.servicetpye='" +serviceType1.toString().trim() + "' ";
+				sqlCondition += " and a.services_flag='" +serviceType1.toString().trim() + "' ";
 
 			}
 			
 			if (caseTypeId!= null && !caseTypeId.toString().contentEquals("")
 					&& !caseTypeId.toString().contentEquals("0")) {
-				sqlCondition += " and ad.casetype='" +caseTypeId.toString().trim() + "' ";
+				sqlCondition += " and a.casetype='" +caseTypeId.toString().trim() + "' ";
 			}
 			 
 			if (inserted_by!= null
@@ -483,19 +483,19 @@ public class EcourtsLeacyCaseMappedWithNewAckNoReportServiceImpl implements Ecou
 				
 				if(userid.equals("gp-services1@ap.gov.in") )    {
 
-					ConditionNew=" and d.servicetpye='Services-I' ";
+					ConditionNew=" and a.inserted_by='Services-I' ";
 				}
 				if(userid.equals("gp-services2@ap.gov.in") )    {
 
-					ConditionNew=" and d.servicetpye='Service-II'";
+					ConditionNew=" and a.inserted_by='Service-II'";
 				}
 				if( userid.equals("gp-services3@ap.gov.in"))    {
 
-					ConditionNew=" and d.servicetpye='Service-III'";
+					ConditionNew=" and a.inserted_by='Service-III'";
 				}
 				if( userid.equals("gp-services4@ap.gov.in"))    {
 
-					ConditionNew=" and d.servicetpye='Services-IV' ";
+					ConditionNew=" and a.inserted_by='Services-IV' ";
 				}
 				
 				condition = " left join ecourts_mst_gp_dept_map egm on (egm.dept_code=d.dept_code) ";
