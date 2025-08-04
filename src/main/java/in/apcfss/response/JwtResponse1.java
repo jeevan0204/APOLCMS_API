@@ -56,6 +56,7 @@ public class JwtResponse1 implements Serializable {
 		this.jwtRefreshExpirationMs = jwtRefreshExpirationMs;
 		this.dept_code = dept_code;
 		this.role = role;
+		//checking
 	}
 
 	public String getToken() {
